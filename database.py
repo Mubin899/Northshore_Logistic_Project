@@ -202,13 +202,13 @@ def update_inventory_item_details(item_id, warehouse_id, item_name, stock_quanti
 
 
 
-def add_shipment(order_number, sender_details, receiver_details, delivery_date, driver_id=None, vehicle_id=None, transportation_cost=None, item_description=None, incident_report=None):
+def add_shipment(order_number, sender_details, receiver_details, delivery_date, driver_id=None, vehicle_id=None, transportation_cost=None, surcharges=None, payment_status=None, item_description=None, incident_report=None):
     conn = get_connection()
     if conn:
         try:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO shipments (order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, item_description, incident_report) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                            (order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, item_description, incident_report))
+            cursor.execute("INSERT INTO shipments (order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, incident_report) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                            (order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, incident_report))
             conn.commit()
             logging.info(f"Shipment added: Order Number {order_number}")
             return True
@@ -236,7 +236,9 @@ def get_shipments():
                     s.status, 
                     COALESCE(d.driver_name, 'Unassigned'), 
                     COALESCE('Veh ' || v.vehicle_id || ' (' || v.capacity || ')', 'Unassigned'), 
-                    s.transportation_cost, 
+                    s.transportation_cost,
+                    s.surcharges,
+                    s.payment_status, 
                     s.item_description, 
                     s.incident_report
                 FROM shipments s 
@@ -252,13 +254,13 @@ def get_shipments():
             conn.close()
     return []
 
-def update_shipment_details(shipment_id, order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, item_description, incident_report):
+def update_shipment_details(shipment_id, order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, incident_report):
     conn = get_connection()
     if conn:
         try:
             cursor = conn.cursor()
-            cursor.execute("UPDATE shipments SET order_number = ?, sender_details = ?, receiver_details = ?, delivery_date = ?, driver_id = ?, vehicle_id = ?, transportation_cost = ?, item_description = ?, incident_report = ? WHERE shipment_id = ?", 
-                           (order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, item_description, incident_report, shipment_id))
+            cursor.execute("UPDATE shipments SET order_number = ?, sender_details = ?, receiver_details = ?, delivery_date = ?, driver_id = ?, vehicle_id = ?, transportation_cost = ?, surcharges = ?, payment_status = ?, item_description = ?, incident_report = ? WHERE shipment_id = ?", 
+                           (order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, incident_report, shipment_id))
             conn.commit()   
             return True
         except Exception as e:

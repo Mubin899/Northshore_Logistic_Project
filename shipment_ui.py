@@ -15,7 +15,7 @@ def load_shipment_ui(main_content_frame):
     table_frame = tk.Frame(main_content_frame, bg="#ecf0f1", bd=1, relief=tk.SOLID)
     table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
 
-    columns = ("ID", "Order No", "Sender", "Receiver", "Date", "Status", "Driver", "Vehicle", "Cost (£)", "Item Desc", "Incident Report")
+    columns = ("ID", "Order No", "Sender", "Receiver", "Date", "Status", "Driver", "Vehicle", "Cost (£)", "Surcharges", "Payment Status", "Item Desc", "Incident Report")
     tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
 
     for col in columns:
@@ -30,6 +30,8 @@ def load_shipment_ui(main_content_frame):
     tree.column("Driver", width=70, anchor=tk.CENTER)
     tree.column("Vehicle", width=70, anchor=tk.CENTER)
     tree.column("Cost (£)", width=80, anchor=tk.CENTER)
+    tree.column("Surcharges", width=80, anchor=tk.CENTER)
+    tree.column("Payment Status", width=100, anchor=tk.CENTER)
     tree.column("Item Desc", width=100, anchor=tk.CENTER)
     tree.column("Incident Report", width=100, anchor=tk.CENTER)
 
@@ -120,21 +122,32 @@ def open_add_shipment_popup(parent, tree, is_edit=False):
     entry_cost = ttk.Entry(form_frame, width=30)
     entry_cost.grid(row=7, column=1, padx=10, pady=5)
 
-    ttk.Label(form_frame, text="Incident Report:").grid(row=8, column=0, sticky="W", pady=5)
+    ttk.Label(form_frame, text="Surcharges (£) (Optional):").grid(row=8, column=0, sticky="W", pady=5)
+    entry_surcharges = ttk.Entry(form_frame, width=30)
+    entry_surcharges.grid(row=8, column=1, padx=10, pady=5)
+
+    ttk.Label(form_frame, text="Payment Status:").grid(row=9, column=0, sticky="W", pady=5)
+    combo_payment = ttk.Combobox(form_frame, values=["Pending", "Paid", "Overdue"], state="readonly", width=27)
+    combo_payment.set("Select Payment Status")
+    combo_payment.grid(row=9, column=1, padx=10, pady=5)
+
+    ttk.Label(form_frame, text="Incident Report:").grid(row=12, column=0, sticky="W", pady=5)
     entry_incident = ttk.Entry(form_frame, width=30)
-    entry_incident.grid(row=8, column=1, padx=10, pady=5)
+    entry_incident.grid(row=12, column=1, padx=10, pady=5)
 
     if is_edit:
         entry_order.insert(0, s_vals[1])
         entry_sender.insert(0, s_vals[2])
         entry_receiver.insert(0, s_vals[3])
+        entry_item_desc.insert(0, s_vals[11])
         entry_date.insert(0, s_vals[4])
         entry_cost.insert(0, s_vals[8])
-        entry_item_desc.insert(0, s_vals[9])
-        entry_incident.insert(0, s_vals[10])
+        entry_surcharges.insert(0, s_vals[9])
+        combo_payment.set(s_vals[10])
+        entry_incident.insert(0, s_vals[12])
     def handle_save(event=None):
         save_shipment(popup, entry_order, entry_sender, entry_receiver, entry_date, 
-                        combo_driver, combo_vehicle, entry_cost, entry_item_desc, entry_incident,
+                        combo_driver, combo_vehicle, entry_cost, entry_surcharges, combo_payment, entry_item_desc, entry_incident,
                         driver_dict, vehicle_dict, tree, selected_id)
         
     popup.bind('<Return>', handle_save)
@@ -142,12 +155,14 @@ def open_add_shipment_popup(parent, tree, is_edit=False):
     ttk.Button(popup, text="Save Shipment",
                 command=handle_save).pack(pady=20)   
 
-def save_shipment(popup, order, sender, receiver, date, c_drv, c_veh, cost, item_desc, incident_report, driver_dict, vehicle_dict, tree, selected_id=None):
+def save_shipment(popup, order, sender, receiver, date, c_drv, c_veh, cost, surcharges, payment_status, item_desc, incident_report, driver_dict, vehicle_dict, tree, selected_id=None):
     o_val = order.get().strip()
     s_val = sender.get().strip()
     r_val = receiver.get().strip()
     d_val = date.get().strip()
     cost_val = cost.get().strip()
+    surcharges_val = surcharges.get().strip()
+    payment_val = payment_status.get().strip()
     desc_val = item_desc.get().strip()
     incident_val = incident_report.get().strip()
 
@@ -181,12 +196,13 @@ def save_shipment(popup, order, sender, receiver, date, c_drv, c_veh, cost, item
 
     desc_val = desc_val if desc_val else None
     incident_val = incident_val if incident_val else None
+    surcharges_float = float(surcharges_val) if surcharges_val else None
     
     if selected_id is not None:
-        success = update_shipment_details(selected_id, o_val, s_val, r_val, d_val, drv_id, veh_id, cost_float, desc_val, incident_val)
+        success = update_shipment_details(selected_id, o_val, s_val, r_val, d_val, drv_id, veh_id, cost_float, surcharges_float, payment_val, desc_val, incident_val)
         msg = f"Shipment '{o_val}' updated."
     else:
-        success = add_shipment(o_val, s_val, r_val, d_val, drv_id, veh_id, cost_float, desc_val, incident_val)
+        success = add_shipment(o_val, s_val, r_val, d_val, drv_id, veh_id, cost_float, surcharges_float, payment_val, desc_val, incident_val)
         msg = f"Shipment '{o_val}' added."
 
     if success:
@@ -239,6 +255,5 @@ def refresh_table(tree):
     items = get_shipments()
 
     for item in items:
-        display_values = (item[0], item[1], item[2], item[3], item[4], item[5], item[6], item[7], item[8], item[9], item[10])
-        tree.insert("", tk.END, iid=item[0], values=display_values)
-    
+        display_values = (item[0], item[1], item[2], item[3], item[4], item[5], item[6], item[7], item[8], item[9], item[10], item[11], item[12])
+        tree.insert("", tk.END, iid=item[0], values=display_values) 

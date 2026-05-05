@@ -55,22 +55,29 @@ def build_tables():
         delivery_date TEXT,
         driver_id INTEGER REFERENCES Drivers (driver_id),
         vehicle_id INTEGER REFERENCES Vehicles (vehicle_id),
-        transportation_cost REAL
+        transportation_cost REAL,
+        surcharges REAL DEFAULT 0.00,
+        item_description TEXT,
+        incident_report TEXT
     )''')
 
     try:
         cursor.execute("ALTER TABLE Drivers ADD COLUMN route_history TEXT")
-        print("Added 'route_history' column to Drivers table.")
-    except Exception as e:
+        print("Migration: Added route_history to Drivers.")
+    except sqlite3.OperationalError:
+        pass # Column already exists
+
+    # 2. Fix Shipments Table (Resolves "no such column: s.surcharges")[cite: 16, 23]
+    try:
+        cursor.execute("ALTER TABLE Shipments ADD COLUMN surcharges REAL DEFAULT 0.00")
+        print("Migration: Added surcharges to Shipments.")
+    except sqlite3.OperationalError:
         pass
 
     try:
-        cursor.execute("ALTER TABLE Shipments ADD COLUMN item_description TEXT")
-    except:
-        pass
-    try:
-        cursor.execute("ALTER TABLE Shipments ADD COLUMN incident_report TEXT")
-    except:
+        cursor.execute("ALTER TABLE Shipments ADD COLUMN payment_status TEXT DEFAULT 'Unpaid'")
+        print("Migration: Added payment_status to Shipments.")
+    except sqlite3.OperationalError:
         pass
     
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_shipment_status ON Shipments (status)")
