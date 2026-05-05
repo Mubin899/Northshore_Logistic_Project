@@ -1,0 +1,14 @@
+# Ignore SQLite databases
+*.db
+*.sqlite3
+
+# Ignore Log files
+*.log
+system_audit.log
+
+# Ignore Python cache folders (those annoying __pycache__ folders)
+__pycache__/
+*.pyc
+
+# Ignore VS Code specific workspace settings (optional, but good practice)
+.vscode/
