@@ -221,9 +221,13 @@ def add_shipment(order_number, sender_details, receiver_details, delivery_date, 
     conn = get_connection()
     if conn:
         try:
+            enc_sender = _encrypt_field(sender_details)
+            enc_receiver = _encrypt_field(receiver_details)
+            enc_incident = _encrypt_field(incident_report)
+            
             cursor = conn.cursor()
             cursor.execute("INSERT INTO shipments (order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, incident_report) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                            (order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, incident_report))
+                            (order_number, enc_sender, enc_receiver, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, enc_incident))
             conn.commit()
             logging.info(f"Shipment added: Order Number {order_number}")
             return True
@@ -260,8 +264,20 @@ def get_shipments():
                 LEFT JOIN drivers d ON s.driver_id = d.driver_id 
                 LEFT JOIN vehicles v ON s.vehicle_id = v.vehicle_id
             """)
-            shipments = cursor.fetchall()
-            return shipments
+            raw_shipments = cursor.fetchall()
+
+            decrypted_shipments = []
+
+            for row in raw_shipments:
+                row_list = list(row)
+                row_list[2] = _decrypt_field(row_list[2])
+                row_list[3] = _decrypt_field(row_list[3])
+                row_list[12] = _decrypt_field(row_list[12])
+
+                decrypted_shipments.append(tuple(row_list))
+
+            return decrypted_shipments
+        
         except Exception as e:
             logging.error(f"Error getting shipments: {e}")
             return []
@@ -273,9 +289,13 @@ def update_shipment_details(shipment_id, order_number, sender_details, receiver_
     conn = get_connection()
     if conn:
         try:
+            enc_sender = _encrypt_field(sender_details)
+            enc_receiver = _encrypt_field(receiver_details)
+            enc_incident = _encrypt_field(incident_report)
+
             cursor = conn.cursor()
             cursor.execute("UPDATE shipments SET order_number = ?, sender_details = ?, receiver_details = ?, delivery_date = ?, driver_id = ?, vehicle_id = ?, transportation_cost = ?, surcharges = ?, payment_status = ?, item_description = ?, incident_report = ? WHERE shipment_id = ?", 
-                           (order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, incident_report, shipment_id))
+                           (order_number, enc_sender, enc_receiver, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, enc_incident, shipment_id))
             conn.commit()   
             return True
         except Exception as e:
@@ -446,10 +466,11 @@ def add_driver(driver_name, license_number, shift_assignment, route_history):
     conn = get_connection()
     if conn:
         try:
+            enc_license = _encrypt_field(license_number)
             cursor = conn.cursor()
 
             cursor.execute("INSERT INTO drivers (driver_name, license_number, shift_assignment, route_history) VALUES (?, ?, ?, ?)", 
-                            (driver_name, license_number, shift_assignment, route_history))
+                            (driver_name, enc_license, shift_assignment, route_history))
     
             conn.commit()
             logging.info(f"Driver added: {driver_name}, License: {license_number}")
@@ -468,8 +489,17 @@ def get_drivers():
         try:
             cursor = conn.cursor()
             cursor.execute("SELECT driver_id, driver_name, license_number, shift_assignment, route_history FROM drivers")
-            drivers = cursor.fetchall()
-            return drivers
+            raw_drivers = cursor.fetchall()
+
+            decrypted_drivers = []
+
+            for row in raw_drivers:
+                row_list = list(row)
+                row_list[2] = _decrypt_field(row_list[2])
+                decrypted_drivers.append(tuple(row_list))
+
+            return decrypted_drivers
+        
         except Exception as e:
             logging.error(f"Error getting drivers: {e}")
             return []
@@ -506,9 +536,10 @@ def update_driver_details(driver_id, driver_name, license_number, shift_assignme
     conn = get_connection()
     if conn:
         try:
+            enc_license = _encrypt_field(license_number)
             cursor = conn.cursor()
             cursor.execute("UPDATE drivers SET driver_name = ?, license_number = ?, shift_assignment = ?, route_history = ? WHERE driver_id = ?", 
-                           (driver_name, license_number, shift_assignment, route_history, driver_id))
+                           (driver_name, enc_license, shift_assignment, route_history, driver_id))
             conn.commit()
             logging.info(f"Driver details updated: ID {driver_id}")
             return True
