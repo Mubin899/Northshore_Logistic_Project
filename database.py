@@ -288,10 +288,13 @@ def add_shipment(order_number, sender_details, receiver_details, delivery_date, 
             enc_sender = _encrypt_field(sender_details)
             enc_receiver = _encrypt_field(receiver_details)
             enc_incident = _encrypt_field(incident_report)
+            enc_payment = _encrypt_field(payment_status)
+            enc_cost = _encrypt_field(str(transportation_cost) if transportation_cost is not None else None)
+            enc_surcharges = _encrypt_field(str(surcharges) if surcharges is not None else None)
             
             cursor = conn.cursor()
             cursor.execute("INSERT INTO shipments (order_number, sender_details, receiver_details, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, incident_report) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                            (order_number, enc_sender, enc_receiver, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, enc_incident))
+                            (order_number, enc_sender, enc_receiver, delivery_date, driver_id, vehicle_id, enc_cost, enc_surcharges, enc_payment, item_description, enc_incident))
             conn.commit()
             logging.info(f"Shipment added: Order Number {order_number}")
             return True
@@ -336,7 +339,11 @@ def get_shipments():
                 row_list = list(row)
                 row_list[2] = _decrypt_field(row_list[2])
                 row_list[3] = _decrypt_field(row_list[3])
+                row_list[8] = _decrypt_field(row_list[8])
+                row_list[9] = _decrypt_field(row_list[9])
+                row_list[10] = _decrypt_field(row_list[10])
                 row_list[12] = _decrypt_field(row_list[12])
+
 
                 decrypted_shipments.append(tuple(row_list))
 
@@ -356,10 +363,13 @@ def update_shipment_details(shipment_id, order_number, sender_details, receiver_
             enc_sender = _encrypt_field(sender_details)
             enc_receiver = _encrypt_field(receiver_details)
             enc_incident = _encrypt_field(incident_report)
+            enc_cost = _encrypt_field(str(transportation_cost) if transportation_cost is not None else None)
+            enc_surcharges = _encrypt_field(str(surcharges) if surcharges is not None else None)
+            enc_payment = _encrypt_field(payment_status)
 
             cursor = conn.cursor()
             cursor.execute("UPDATE shipments SET order_number = ?, sender_details = ?, receiver_details = ?, delivery_date = ?, driver_id = ?, vehicle_id = ?, transportation_cost = ?, surcharges = ?, payment_status = ?, item_description = ?, incident_report = ? WHERE shipment_id = ?", 
-                           (order_number, enc_sender, enc_receiver, delivery_date, driver_id, vehicle_id, transportation_cost, surcharges, payment_status, item_description, enc_incident, shipment_id))
+                           (order_number, enc_sender, enc_receiver, delivery_date, driver_id, vehicle_id, enc_cost, enc_surcharges, enc_payment, item_description, enc_incident, shipment_id))
             conn.commit()   
             return True
         except Exception as e:
