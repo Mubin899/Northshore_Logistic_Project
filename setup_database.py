@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 
 def build_tables():
@@ -64,20 +65,19 @@ def build_tables():
 
     try:
         cursor.execute("ALTER TABLE Drivers ADD COLUMN route_history TEXT")
-        print("Migration: Added route_history to Drivers.")
+        logging.info("Migration: Added route_history to Drivers.")
     except sqlite3.OperationalError:
         pass # Column already exists
 
-    # 2. Fix Shipments Table (Resolves "no such column: s.surcharges")[cite: 16, 23]
     try:
         cursor.execute("ALTER TABLE Shipments ADD COLUMN surcharges REAL DEFAULT 0.00")
-        print("Migration: Added surcharges to Shipments.")
+        logging.info("Migration: Added surcharges to Shipments.")
     except sqlite3.OperationalError:
         pass
 
     try:
         cursor.execute("ALTER TABLE Shipments ADD COLUMN payment_status TEXT DEFAULT 'Unpaid'")
-        print("Migration: Added payment_status to Shipments.")
+        logging.info("Migration: Added payment_status to Shipments.")
     except sqlite3.OperationalError:
         pass
     
@@ -89,7 +89,7 @@ def build_tables():
     
     conn.commit()
     conn.close()
-    print("Success: Database structure built perfectly!")
+    logging.info("Success: Database structure built perfectly!")
 
 if __name__ == "__main__":
     build_tables()

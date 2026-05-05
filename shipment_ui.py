@@ -196,8 +196,12 @@ def save_shipment(popup, order, sender, receiver, date, c_drv, c_veh, cost, surc
 
     desc_val = desc_val if desc_val else None
     incident_val = incident_val if incident_val else None
-    surcharges_float = float(surcharges_val) if surcharges_val else None
-    
+    try:
+        surcharges_float = float(surcharges_val) if surcharges_val else None
+    except ValueError:
+        messagebox.showerror("Input Error", "Surcharges must be a number.", parent=popup)
+        return
+
     if selected_id is not None:
         success = update_shipment_details(selected_id, o_val, s_val, r_val, d_val, drv_id, veh_id, cost_float, surcharges_float, payment_val, desc_val, incident_val)
         msg = f"Shipment '{o_val}' updated."
