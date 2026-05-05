@@ -57,6 +57,7 @@ def build_tables():
         vehicle_id INTEGER REFERENCES Vehicles (vehicle_id),
         transportation_cost REAL,
         surcharges REAL DEFAULT 0.00,
+        payment_status TEXT DEFAULT 'Unpaid',
         item_description TEXT,
         incident_report TEXT
     )''')

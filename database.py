@@ -2,9 +2,24 @@ import sqlite3
 import hashlib
 import logging
 import secrets
+import base64
 
 logging.basicConfig(filename='system_audit.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
+def _encrypt_field(data):
+    if not data:
+        return None
+    return base64.b64encode(str(data).encode("utf-8")).decode("utf-8")
+
+def _decrypt_field(encrypted_data):
+    if not encrypted_data:
+        return encrypted_data
+    try:
+        return base64.b64decode(encrypted_data.encode("utf-8")).decode("utf-8")
+    except Exception as e:
+        logging.error(f"Decryption error: {e}")
+        return encrypted_data        
+
 def get_connection():
     try:
         conn = sqlite3.connect('northshore.db')
