@@ -60,7 +60,7 @@ def open_add_driver_popup(parent, tree, is_edit=False):
     popup = tk.Toplevel(parent)
     title_text = "Edit Driver Details" if is_edit else "Add New Driver"
     popup.title(title_text)
-    popup.geometry("400x250")
+    popup.geometry("400x300")
     popup.grab_set()
     popup.resizable(False, False)
 
