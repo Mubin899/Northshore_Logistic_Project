@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from database import verify_login
+from setup_database import build_tables
 
 from home_ui import load_home_ui
 from inventory_ui import load_inventory_ui
@@ -14,6 +15,7 @@ from audit_ui import load_audit_ui
 class NorthshoreApp(tk.Tk):
     def __init__(self):
         super().__init__()
+        build_tables()
         self.title("Northshore Logistics Ltd")
         self.geometry("1200x700")
 

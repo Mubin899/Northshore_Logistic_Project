@@ -15,9 +15,9 @@ def _decrypt_field(encrypted_data):
     if not encrypted_data:
         return encrypted_data
     try:
-        return base64.b64decode(encrypted_data.encode("utf-8")).decode("utf-8")
-    except Exception as e:
-        logging.error(f"Decryption error: {e}")
+        decoded = base64.b64decode(encrypted_data.encode("utf-8") + b'==')
+        return decoded.decode("utf-8")
+    except Exception:
         return encrypted_data        
 
 def get_connection():
@@ -41,7 +41,7 @@ def verify_login(username, password):
         cursor = conn.cursor()
         cursor.execute("SELECT role, password_hash FROM users WHERE username = ?", (username,))
         result = cursor.fetchone()
-        conn.close()
+
 
         if result:
             role, stored_hash_string = result
@@ -50,18 +50,29 @@ def verify_login(username, password):
                 salt, stored_hash = stored_hash_string.split("$")
                 calculated_hash = hashlib.sha256((salt + password).encode()).hexdigest()
                 if secrets.compare_digest(calculated_hash, stored_hash):
+                    conn.close()
                     session_token = secrets.token_hex(32)
                     logging.info(f"User logged in securely: {username}. Session Token: {session_token[:8]}...")
                     return role, session_token
             else:
                 old_hash = hashlib.sha256(password.encode()).hexdigest()
                 if secrets.compare_digest(old_hash, stored_hash_string):
+                    new_hash = hash_password(password)
+                    try:
+                        cursor.execute("UPDATE users SET password_hash = ? WHERE username = ?",
+                                       (new_hash, username))
+                        conn.commit()
+                        logging.info(f"Password hash upgraded for user: {username}")
+                    except Exception as e:
+                        logging.warning(f"Could not upgrade hash for {username}: {e}")
+                    conn.close()
                     session_token = secrets.token_hex(32)
                     logging.info(f"User logged in (Legacy Hash): {username}. Session Token: {session_token[:8]}...")
                     return role, session_token
-        logging.warning(f"Failed login attempt: {username}")
-
+        logging.warning(f"Failed login attempt for username: {username}")
+        conn.close()
     return None, None
+    
 
 def get_warehouses():
     conn = get_connection()
