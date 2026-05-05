@@ -431,7 +431,7 @@ def add_driver(driver_name, license_number, shift_assignment):
         try:
             cursor = conn.cursor()
 
-            cursor.execute("INSERT INTO drivers (driver_name, license_number, shift_assignment) VALUES (?, ?, ?)", 
+            cursor.execute("INSERT INTO drivers (driver_name, license_number, shift_assignment, route_history) VALUES (?, ?, ?)", 
                             (driver_name, license_number, shift_assignment))
     
             conn.commit()
