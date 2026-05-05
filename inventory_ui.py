@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from database import add_inventory_item, get_inventory_items, delete_inventory_item, update_inventory_item, update_inventory_item_details, get_warehouses
+from database import add_inventory_item, get_inventory_items, delete_inventory_item, update_inventory_item, update_inventory_item_details, transfer_inventory_item, get_warehouses
 
 def load_inventory_ui(main_content_frame):
     header_frame= tk.Frame(main_content_frame, bg="#ecf0f1")
@@ -49,6 +49,8 @@ def load_inventory_ui(main_content_frame):
                 command=lambda: delete_item(tree)).pack(side=tk.RIGHT, padx=(10, 0))
     ttk.Button(action_frame, text="Edit Details",
                 command=lambda: open_add_item_popup(main_content_frame, tree, is_edit=True)).pack(side=tk.RIGHT, padx=(10, 0))
+    ttk.Button(action_frame, text="Transfer Item",
+                command=lambda: open_transfer_item_popup(main_content_frame, tree)).pack(side=tk.RIGHT, padx=(10, 0))
     
     refresh_table(tree)
 
@@ -113,6 +115,71 @@ def open_add_item_popup(parent, tree, is_edit=False):
     ttk.Button(popup, text="Save Item",
                 command=handle_save).pack(pady=20)
     
+def open_transfer_item_popup(parent, tree):
+    selected_item = tree.selection()
+    if not selected_item:
+        messagebox.showerror("Selection Error", "Please select an item to transfer.")
+        return
+    
+    s_vals = tree.item(selected_item[0], "values")
+    item_id = int(s_vals[0])
+    item_name = s_vals[1]
+    current_stock = int(s_vals[2])
+
+    popup = tk.Toplevel(parent)
+    popup.title("Transfer Inventory")
+    popup.geometry("380x250")
+    popup.grab_set()
+    popup.resizable(False, False)
+
+    ttk.Label(popup, text=f"Transferring: {item_name}", font=("Arial", 12, "bold")).pack(pady=10)
+    ttk.Label(popup, text=f"Available Stock: {current_stock}").pack(pady=5)
+
+    form_frame = tk.Frame(popup)
+    form_frame.pack(pady=10, padx=20, fill=tk.X)
+
+    ttk.Label(form_frame, text="Destination:").grid(row=0, column=0, sticky="W", pady=5)
+
+    warehouses = get_warehouses()
+    warehouse_dict = {f"Warehouse {w[0]} - {w[1]}": w[0] for w in warehouses}
+    combo_warehouse = ttk.Combobox(form_frame, values=list(warehouse_dict.keys()), state="readonly", width=25)
+    combo_warehouse.set("Select Destination")
+    combo_warehouse.grid(row=0, column=1, padx=10, pady=5)
+
+    ttk.Label(form_frame, text="Quantity:").grid(row=1, column=0, sticky="W", pady=5)
+    entry_qty = ttk.Entry(form_frame, width=28)
+    entry_qty.grid(row=1, column=1, padx=10, pady=5)
+
+    def handle_transfer():
+        dest_key = combo_warehouse.get()
+        qty_val = entry_qty.get().strip()
+
+        if dest_key == "Select Destination":
+            messagebox.showerror("Input Error", "Please select a destination warehouse.", parent=popup)
+            return
+        
+        if not qty_val.isdigit() or int(qty_val) <= 0:
+            messagebox.showerror("Input Error", "Please enter a valid positive number.", parent=popup)
+            return
+        
+        qty = int(qty_val)
+        if qty > current_stock:
+            messagebox.showerror("Input Error", "Transfer quantity exceeds available stock.", parent=popup)
+            return
+
+        dest_id = warehouse_dict[dest_key]
+        success, msg = transfer_inventory_item(item_id, dest_id, qty)
+        
+        if success:
+            display_msg = msg if msg else "Transfer completed successfully."
+            messagebox.showinfo("Success", display_msg, parent=popup)
+            refresh_table(tree)
+            popup.destroy()
+        else:
+            messagebox.showerror("Transfer Error", msg, parent=popup)
+
+    ttk.Button(popup, text="Confirm Transfer", command=handle_transfer).pack(pady=15)
+
 def save_item(popup, entry_name, entry_stock, entry_reorder, warehouse_dict, combo_warehouse, tree, selected_id=None):
     item_name = entry_name.get().strip()
     stock_quantity = entry_stock.get().strip()

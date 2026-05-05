@@ -215,6 +215,59 @@ def update_inventory_item_details(item_id, warehouse_id, item_name, stock_quanti
             conn.close()
     return False
 
+def transfer_inventory_item(item_id, destination_warehouse_id, transfer_quantity):
+    conn = get_connection()
+    if conn:
+        try:
+            transfer_quantity = int(transfer_quantity)
+            if transfer_quantity <= 0:
+                return False, "Transfer quantity must be greater than zero."
+
+            cursor = conn.cursor()
+            cursor.execute("SELECT warehouse_id, item_name, stock_quantity, reorder_level FROM inventory WHERE item_id = ?", (item_id,))
+            result = cursor.fetchone()
+            
+            if not result:
+                return False, "Item not found."
+            
+            source_warehouse_id, item_name, current_stock, reorder_level = result
+            
+            if str(source_warehouse_id) == str(destination_warehouse_id):
+                return False, "Source and destination warehouses cannot be the same."
+            
+            if current_stock < transfer_quantity:
+                return False, "Insufficient stock for transfer."
+
+            new_source_stock = current_stock - transfer_quantity
+
+            if new_source_stock == 0:
+                cursor.execute("DELETE FROM inventory WHERE item_id = ?", (item_id,))
+            else:
+                cursor.execute("UPDATE inventory SET stock_quantity = ? WHERE item_id = ?", (new_source_stock, item_id))
+            
+        
+            cursor.execute("SELECT item_id, stock_quantity FROM inventory WHERE warehouse_id = ? AND item_name = ?", (destination_warehouse_id, item_name))
+            dest_item = cursor.fetchone()
+            
+            if dest_item:
+                dest_item_id, dest_stock = dest_item
+                new_dest_stock = dest_stock + transfer_quantity
+                cursor.execute("UPDATE inventory SET stock_quantity = ? WHERE item_id = ?", (new_dest_stock, dest_item_id))
+            else:
+                cursor.execute("INSERT INTO inventory (warehouse_id, item_name, stock_quantity, reorder_level) VALUES (?, ?, ?, ?)", 
+                               (destination_warehouse_id, item_name, transfer_quantity, reorder_level))
+            
+            conn.commit()
+            logging.info(f"Transferred {transfer_quantity} of '{item_name}' to Warehouse {destination_warehouse_id}")
+            return True, "Transfer successful."
+        
+        except Exception as e:
+            conn.rollback()
+            logging.error(f"Error transferring inventory item: {e}")
+            return False, f"An error occurred during transfer: {str(e)}"
+        finally:
+            conn.close()
+    return False, "Database connection error."
 
 
 def add_shipment(order_number, sender_details, receiver_details, delivery_date, driver_id=None, vehicle_id=None, transportation_cost=None, surcharges=None, payment_status=None, item_description=None, incident_report=None):
