@@ -67,7 +67,7 @@ def build_tables():
         cursor.execute("ALTER TABLE Drivers ADD COLUMN route_history TEXT")
         logging.info("Migration: Added route_history to Drivers.")
     except sqlite3.OperationalError:
-        pass # Column already exists
+        pass 
 
     try:
         cursor.execute("ALTER TABLE Shipments ADD COLUMN surcharges REAL DEFAULT 0.00")
