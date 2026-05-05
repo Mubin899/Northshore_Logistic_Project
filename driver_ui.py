@@ -14,18 +14,20 @@ def load_driver_ui(main_content_frame):
     table_frame = tk.Frame(main_content_frame, bg="#ecf0f1", bd=1, relief=tk.SOLID)
     table_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
 
-    columns = ("ID", "Driver Name", "License", "Shift")
+    columns = ("ID", "Driver Name", "License", "Shift", "Route History")
     tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
 
     tree.heading("ID", text="Driver ID")
     tree.heading("Driver Name", text="Driver Name")
     tree.heading("License", text="License No.")
     tree.heading("Shift", text="Shift")
+    tree.heading("Route History", text="Route History")
 
     tree.column("ID", width=100, anchor=tk.CENTER)
     tree.column("Driver Name", width=120, anchor=tk.CENTER)
     tree.column("License", width=200, anchor=tk.CENTER)
     tree.column("Shift", width=150, anchor=tk.CENTER)
+    tree.column("Route History", width=200, anchor=tk.CENTER)
 
     tree_scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=tree.yview)
     tree.configure(yscrollcommand=tree_scrollbar.set)
@@ -53,7 +55,8 @@ def open_add_driver_popup(parent, tree, is_edit=False):
         current_name = drv_values[1]
         current_license = drv_values[2]
         current_shift = drv_values[3]
-        
+        current_route = drv_values[4]
+
     popup = tk.Toplevel(parent)
     title_text = "Edit Driver Details" if is_edit else "Add New Driver"
     popup.title(title_text)
@@ -79,13 +82,18 @@ def open_add_driver_popup(parent, tree, is_edit=False):
     combo_shift.set("Select Shift")
     combo_shift.grid(row=2, column=1, padx=10, pady=5)
 
+    ttk.Label(form_frame, text="Route History:").grid(row=3, column=0, sticky="W", pady=5)
+    entry_route_history = ttk.Entry(form_frame, width=22)
+    entry_route_history.grid(row=3, column=1, padx=10, pady=5)
+
     if is_edit:
         entry_driver_name.insert(0, current_name)
         entry_license.insert(0, current_license)
         combo_shift.set(current_shift)
+        entry_route_history.insert(0, current_route)
 
     def handle_save(event=None):
-        save_driver(popup, tree, entry_driver_name, entry_license, combo_shift, selected_id)
+        save_driver(popup, tree, entry_driver_name, entry_license, combo_shift, entry_route_history, selected_id)
     
     popup.bind('<Return>', handle_save)
     
@@ -93,10 +101,11 @@ def open_add_driver_popup(parent, tree, is_edit=False):
                command=handle_save).pack(pady=15)
 
 
-def save_driver(popup, tree, entry_driver_name, entry_license, combo_shift, selected_id=None):
+def save_driver(popup, tree, entry_driver_name, entry_license, combo_shift, entry_route_history, selected_id=None):
     driver_name = entry_driver_name.get().strip()
     license_no = entry_license.get().strip()
     shift = combo_shift.get()
+    route_history = entry_route_history.get().strip()
 
     if not driver_name or not license_no or shift == "Select Shift":
         messagebox.showerror("Input Error", "All fields are required.", parent=popup)
@@ -112,10 +121,10 @@ def save_driver(popup, tree, entry_driver_name, entry_license, combo_shift, sele
     
 
     if selected_id is not None:
-        success = update_driver_details(selected_id, driver_name, license_no, shift)
+        success = update_driver_details(selected_id, driver_name, license_no, shift, route_history)
         msg = "Driver details updated successfully."
     else:
-        success = add_driver(driver_name, license_no, shift)
+        success = add_driver(driver_name, license_no, shift, route_history)
         msg = "Driver added successfully."
 
     if success:
@@ -152,4 +161,4 @@ def refresh_table(tree):
     drivers = get_drivers()
 
     for drv in drivers:
-        tree.insert("", tk.END, iid=drv[0], values=(f"DRV-{drv[0]}", drv[1], drv[2], drv[3]))
+        tree.insert("", tk.END, iid=drv[0], values=(f"DRV-{drv[0]}", drv[1], drv[2], drv[3], drv[4]))

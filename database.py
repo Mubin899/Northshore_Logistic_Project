@@ -425,14 +425,14 @@ def get_vehicle_utilization():
 
 
 
-def add_driver(driver_name, license_number, shift_assignment):
+def add_driver(driver_name, license_number, shift_assignment, route_history):
     conn = get_connection()
     if conn:
         try:
             cursor = conn.cursor()
 
-            cursor.execute("INSERT INTO drivers (driver_name, license_number, shift_assignment, route_history) VALUES (?, ?, ?)", 
-                            (driver_name, license_number, shift_assignment))
+            cursor.execute("INSERT INTO drivers (driver_name, license_number, shift_assignment, route_history) VALUES (?, ?, ?, ?)", 
+                            (driver_name, license_number, shift_assignment, route_history))
     
             conn.commit()
             logging.info(f"Driver added: {driver_name}, License: {license_number}")
@@ -450,7 +450,7 @@ def get_drivers():
     if conn:
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT driver_id, driver_name, license_number, shift_assignment FROM drivers")
+            cursor.execute("SELECT driver_id, driver_name, license_number, shift_assignment, route_history FROM drivers")
             drivers = cursor.fetchall()
             return drivers
         except Exception as e:
@@ -485,13 +485,13 @@ def delete_driver(driver_id):
             conn.close()
     return False, "Database connection error."
 
-def update_driver_details(driver_id, driver_name, license_number, shift_assignment):
+def update_driver_details(driver_id, driver_name, license_number, shift_assignment, route_history):
     conn = get_connection()
     if conn:
         try:
             cursor = conn.cursor()
-            cursor.execute("UPDATE drivers SET driver_name = ?, license_number = ?, shift_assignment = ? WHERE driver_id = ?", 
-                           (driver_name, license_number, shift_assignment, driver_id))
+            cursor.execute("UPDATE drivers SET driver_name = ?, license_number = ?, shift_assignment = ?, route_history = ? WHERE driver_id = ?", 
+                           (driver_name, license_number, shift_assignment, route_history, driver_id))
             conn.commit()
             logging.info(f"Driver details updated: ID {driver_id}")
             return True

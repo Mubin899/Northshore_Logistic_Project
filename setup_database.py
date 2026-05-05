@@ -1,7 +1,7 @@
 import sqlite3
 
 def build_tables():
-    # This creates the real database exactly where Python expects it
+
     conn = sqlite3.connect('northshore.db')
     cursor = conn.cursor()
 
@@ -59,6 +59,12 @@ def build_tables():
     )''')
 
     try:
+        cursor.execute("ALTER TABLE Drivers ADD COLUMN route_history TEXT")
+        print("Added 'route_history' column to Drivers table.")
+    except Exception as e:
+        pass
+
+    try:
         cursor.execute("ALTER TABLE Shipments ADD COLUMN item_description TEXT")
     except:
         pass
@@ -70,9 +76,7 @@ def build_tables():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_shipment_status ON Shipments (status)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_shipment_driver ON Shipments (driver_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_shipment_vehicle ON Shipments (vehicle_id)")
-    
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_inventory_warehouse ON Inventory (warehouse_id)")
-    
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_vehicle_availability ON Vehicles (is_available)")
     
     conn.commit()
